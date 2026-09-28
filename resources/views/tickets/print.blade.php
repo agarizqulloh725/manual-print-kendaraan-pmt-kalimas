@@ -55,7 +55,7 @@
         <div class="divider"></div>
         <table>
             <tr><td class="label">Golongan</td><td>: {{ $ticket->vehicle_class->value }}</td></tr>
-            <tr><td class="label">Berat</td><td>: <strong>{{ number_format($ticket->weight_kg, 0, ',', '.') }} Kg</strong> ({{ $ticket->weight_mode->label() }})</td></tr>
+            <tr><td class="label">Tonase</td><td>: <strong>{{ $ticket->tonnageLabel() }}</strong></td></tr>
             <tr><td class="label">Petugas</td><td>: {{ $ticket->user?->name }}</td></tr>
         </table>
         <div class="divider"></div>
@@ -66,9 +66,9 @@
             <div>Dicetak: {{ ($ticket->last_printed_at ?? now())->format('d/m/Y H:i') }}</div>
             <div>Simpan tiket ini sebagai bukti timbang</div>
         </div>
-        @if ($ticket->barcodeUrl())
+        @if ($ticket->photoUrl('barcode'))
             <div class="barcode">
-                <img src="{{ $ticket->barcodeUrl() }}" alt="Barcode">
+                <img src="{{ $ticket->photoUrl('barcode') }}" alt="Barcode">
             </div>
         @endif
         @if ($ticket->barcode_value)

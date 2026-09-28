@@ -99,7 +99,7 @@
                     <a href="{{ route('reports.vessel', $vessel->voyage_no) }}" class="flex items-center justify-between gap-3 py-2 text-sm hover:bg-slate-50">
                         <div class="min-w-0">
                             <p class="truncate font-semibold text-slate-800">🚢 {{ $vessel->vessel_name }} <span class="font-normal text-slate-500">→ {{ $vessel->destination_port_name }}</span></p>
-                            <p class="text-xs text-slate-500">{{ number_format($vessel->total_weight_kg, 0, ',', '.') }} Kg</p>
+                            <p class="text-xs text-slate-500">{{ \App\Models\Ticket::formatTon($vessel->total_weight_ton) }}</p>
                         </div>
                         <div class="flex shrink-0 gap-1 text-xs font-bold">
                             <span class="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">{{ $vessel->total }}</span>

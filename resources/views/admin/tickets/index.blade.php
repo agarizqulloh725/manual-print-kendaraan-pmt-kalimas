@@ -40,7 +40,7 @@
                 </div>
                 <p class="truncate text-slate-700">🚢 {{ $ticket->vessel_name }} <span class="text-slate-500">→ {{ $ticket->destination_port_name }}</span></p>
                 <span class="text-slate-700"><span class="lg:hidden">Gol. </span>{{ $ticket->vehicle_class->value }}</span>
-                <span class="text-slate-700 lg:text-right">{{ number_format($ticket->weight_kg, 0, ',', '.') }} Kg</span>
+                <span class="text-slate-700 lg:text-right">{{ $ticket->tonnageLabel() }}</span>
                 <span class="truncate text-xs text-slate-500">{{ $ticket->user?->name }}</span>
                 <div class="flex w-full gap-2 lg:w-36 lg:justify-end">
                     <a href="{{ route('admin.tickets.edit', $ticket) }}" class="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-center text-xs font-bold text-slate-700 hover:bg-slate-50 lg:flex-none">Edit</a>

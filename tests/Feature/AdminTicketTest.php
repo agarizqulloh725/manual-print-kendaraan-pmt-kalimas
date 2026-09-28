@@ -39,7 +39,7 @@ test('an administrator can correct a ticket', function () {
             'destination_port_name' => 'lembar',
             'vehicle_class' => VehicleClass::VIB->value,
             'weight_mode' => WeightMode::Manual->value,
-            'weight_kg' => 21000,
+            'weight_ton' => '21,5',
             'barcode_value' => 'BENAR-001',
             'barcode_format' => 'Code128',
         ])
@@ -50,7 +50,7 @@ test('an administrator can correct a ticket', function () {
         ->plate_number->toBe('L 1234 XY')
         ->destination_port_name->toBe('LEMBAR')
         ->vehicle_class->toBe(VehicleClass::VIB)
-        ->weight_kg->toBe(21000)
+        ->weight_ton->toBe('21.50')
         ->barcode_value->toBe('BENAR-001')
         ->barcode_format->toBeNull();
 });

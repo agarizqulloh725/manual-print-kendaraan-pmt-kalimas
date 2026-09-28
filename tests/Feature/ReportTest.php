@@ -12,10 +12,10 @@ beforeEach(function () {
 
 test('the vessel report lists one row per voyage for the selected period', function () {
     Ticket::factory()->for($this->operator)->count(2)->create([
-        'voyage_no' => 'V1', 'vessel_name' => 'MILA UTAMA', 'destination_port_name' => 'BANJARMASIN', 'weight_kg' => 1000,
+        'voyage_no' => 'V1', 'vessel_name' => 'MILA UTAMA', 'destination_port_name' => 'BANJARMASIN', 'weight_ton' => 1,
     ]);
     Ticket::factory()->for($this->operator)->ptosrVerified()->create([
-        'voyage_no' => 'V1', 'vessel_name' => 'MILA UTAMA', 'destination_port_name' => 'BANJARMASIN', 'weight_kg' => 1000,
+        'voyage_no' => 'V1', 'vessel_name' => 'MILA UTAMA', 'destination_port_name' => 'BANJARMASIN', 'weight_ton' => 1,
     ]);
     Ticket::factory()->for($this->operator)->create([
         'voyage_no' => 'V2', 'vessel_name' => 'EGON, KM', 'created_at' => now()->subDays(3),
@@ -29,7 +29,7 @@ test('the vessel report lists one row per voyage for the selected period', funct
         ->assertViewHas('vessels', fn ($vessels) => $vessels->count() === 1
             && (int) $vessels->first()->total_vehicles === 3
             && (int) $vessels->first()->ptosr_vehicles === 1
-            && (int) $vessels->first()->total_weight_kg === 3000);
+            && (float) $vessels->first()->total_weight_ton === 3.0);
 });
 
 test('the vessel report can be searched by vessel name', function () {
@@ -143,14 +143,14 @@ test('active filters are shown as removable chips with a count badge', function 
 });
 
 test('total weight is only shown per vessel', function () {
-    Ticket::factory()->for($this->operator)->create(['voyage_no' => 'V1', 'weight_kg' => 12345]);
+    Ticket::factory()->for($this->operator)->create(['voyage_no' => 'V1', 'weight_ton' => 12.35]);
 
-    $this->actingAs($this->operator)->get(route('reports.vehicles'))->assertDontSee('Total Berat (Kg)');
+    $this->actingAs($this->operator)->get(route('reports.vehicles'))->assertDontSee('Total Tonase');
     $this->actingAs($this->operator)->get(route('reports.vessels'))
-        ->assertDontSee('Total Berat (Kg)')
+        ->assertDontSee('Total Tonase')
         ->assertDontSee('NON PTOSR</p>', false)
-        ->assertSee('12.345 Kg');
-    $this->actingAs($this->operator)->get(route('reports.vessel', 'V1'))->assertSee('Total Berat (Kg)')->assertSee('12.345');
+        ->assertSee('12,35 Ton');
+    $this->actingAs($this->operator)->get(route('reports.vessel', 'V1'))->assertSee('Total Tonase')->assertSee('12,35 Ton');
 });
 
 test('the report rejects an end date before the start date', function () {

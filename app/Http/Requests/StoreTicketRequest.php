@@ -39,7 +39,7 @@ class StoreTicketRequest extends FormRequest
             'plate_number' => ['required', 'string', 'regex:/^[A-Z0-9 ]{3,15}$/'],
             'vehicle_class' => ['required', Rule::enum(VehicleClass::class)],
             'weight_mode' => ['required', Rule::enum(WeightMode::class)],
-            'weight_kg' => [Rule::requiredIf($this->input('weight_mode') === WeightMode::Manual->value), 'nullable', 'integer', 'min:1', 'max:200000'],
+            'weight_ton' => [Rule::requiredIf($this->input('weight_mode') === WeightMode::Manual->value), 'nullable', 'numeric', 'decimal:0,2', 'min:0.01', 'max:500'],
             'vehicle_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'ticket_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'barcode_image' => ['nullable', 'image', 'mimes:png', 'max:2048'],
@@ -60,7 +60,7 @@ class StoreTicketRequest extends FormRequest
             'plate_number' => 'plat nomor',
             'vehicle_class' => 'golongan',
             'weight_mode' => 'mode berat',
-            'weight_kg' => 'berat',
+            'weight_ton' => 'tonase',
             'vehicle_photo' => 'foto kendaraan',
             'ticket_photo' => 'foto tiket',
             'barcode_image' => 'barcode',
@@ -76,6 +76,7 @@ class StoreTicketRequest extends FormRequest
         return [
             'voyage_no.required' => 'Pilih kapal yang sedang beroperasi.',
             'plate_number.regex' => 'Plat nomor hanya boleh huruf, angka, dan spasi. Contoh: L 1234 XY.',
+            'weight_ton.decimal' => 'Tonase maksimal 2 angka di belakang koma. Contoh: 12,5.',
         ];
     }
 
@@ -83,20 +84,22 @@ class StoreTicketRequest extends FormRequest
     {
         $this->merge([
             'plate_number' => Str::of((string) $this->input('plate_number'))->upper()->squish()->toString(),
+            // Accept the Indonesian decimal comma: "12,5" means 12.5 ton.
+            'weight_ton' => $this->filled('weight_ton') ? str_replace(',', '.', trim((string) $this->input('weight_ton'))) : null,
         ]);
 
         $this->normalizeBarcodeInput();
     }
 
     /**
-     * The final weight in kilograms, falling back to the class estimate in automatic mode.
+     * The final weight in tonnes, falling back to the class estimate in automatic mode.
      */
-    public function weightKg(): int
+    public function weightTon(): float
     {
         if ($this->enum('weight_mode', WeightMode::class) === WeightMode::Automatic) {
-            return $this->enum('vehicle_class', VehicleClass::class)->defaultWeightKg();
+            return $this->enum('vehicle_class', VehicleClass::class)->defaultWeightTon();
         }
 
-        return $this->integer('weight_kg');
+        return $this->float('weight_ton');
     }
 }

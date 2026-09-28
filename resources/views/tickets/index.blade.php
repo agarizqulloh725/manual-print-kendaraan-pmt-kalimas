@@ -26,7 +26,7 @@
     <div class="flex flex-col gap-4">
         @forelse ($tickets as $ticket)
             @php
-                $photoCount = collect([$ticket->vehicle_photo_path, $ticket->ticket_photo_path, $ticket->barcode_path])->filter()->count();
+                $photoCount = $ticket->photoCount();
                 $togglerId = 'photos_toggle_'.$ticket->id;
             @endphp
             <div class="overflow-hidden rounded-xl border border-slate-200">
@@ -38,39 +38,39 @@
                     <p class="truncate text-xs text-slate-500">{{ $ticket->ticket_number }} · {{ $ticket->created_at->format('d/m/Y H:i') }}</p>
                     <p class="mt-1 truncate text-sm text-slate-700">🚢 {{ $ticket->vessel_name }} → {{ $ticket->destination_port_name }}</p>
                     <p class="truncate text-sm text-slate-600">
-                        Gol. {{ $ticket->vehicle_class->value }} · {{ number_format($ticket->weight_kg, 0, ',', '.') }} Kg ({{ $ticket->weight_mode->label() }})
+                        Gol. {{ $ticket->vehicle_class->value }} · {{ $ticket->tonnageLabel() }} ({{ $ticket->weight_mode->label() }})
                     </p>
                     <p class="truncate font-mono text-xs text-slate-600">▮ {{ $ticket->barcode_value ?? '-' }}</p>
                     <p class="truncate text-xs text-slate-500">Petugas: {{ $ticket->user?->name }} · Dicetak {{ $ticket->print_count }}x</p>
                 </div>
 
-                {{-- CSS-only toggle: the checkbox (peer) opens the photo panel below the fixed action bar. --}}
-                <input type="checkbox" id="{{ $togglerId }}" class="peer sr-only" @checked($errors->any() && old('ticket_id') == $ticket->id)>
+                {{-- Reprint only shows photos taken at input; nothing can be uploaded or changed here.
+                     CSS-only toggle: the checkbox (peer) opens the photo panel below the fixed action bar. --}}
+                <input type="checkbox" id="{{ $togglerId }}" class="peer sr-only" @disabled($photoCount === 0)>
 
                 <div class="grid grid-cols-2 gap-2 border-t border-slate-100 bg-slate-50 p-3 peer-checked:[&_[data-chevron]]:rotate-180 peer-focus-visible:[&_label]:ring-2 peer-focus-visible:[&_label]:ring-sky-300">
-                    <label for="{{ $togglerId }}"
-                           class="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-700 select-none hover:bg-slate-100">
-                        📷 Foto <span class="font-normal text-slate-500">{{ $photoCount }}/3</span>
-                        <span class="text-xs text-slate-400 transition" data-chevron>▼</span>
-                    </label>
+                    @if ($photoCount > 0)
+                        <label for="{{ $togglerId }}"
+                               class="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-700 select-none hover:bg-slate-100">
+                            📷 Foto <span class="font-normal text-slate-500">{{ $photoCount }}/3</span>
+                            <span class="text-xs text-slate-400 transition" data-chevron>▼</span>
+                        </label>
+                    @else
+                        <span class="flex items-center justify-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm font-semibold text-slate-400 select-none">
+                            📷 Tidak ada foto
+                        </span>
+                    @endif
                     <form method="POST" action="{{ route('tickets.reprint', $ticket) }}">
                         @csrf
                         <button type="submit" class="w-full rounded-lg bg-sky-600 px-3 py-2 text-sm font-bold text-white hover:bg-sky-700">🖨️ Cetak Ulang</button>
                     </form>
                 </div>
 
-                <form method="POST" action="{{ route('tickets.photos', $ticket) }}" enctype="multipart/form-data"
-                      class="hidden flex-col gap-3 border-t border-slate-100 p-4 peer-checked:flex">
-                    @csrf
-                    <input type="hidden" name="ticket_id" value="{{ $ticket->id }}">
-                    <x-photo-fields :id-suffix="'_'.$ticket->id"
-                                    :vehicle-photo-url="$ticket->vehiclePhotoUrl()"
-                                    :ticket-photo-url="$ticket->ticketPhotoUrl()"
-                                    :barcode-url="$ticket->barcodeUrl()"
-                                    :barcode-value="$ticket->barcode_value"
-                                    :barcode-format="$ticket->barcode_format" />
-                    <button type="submit" class="btn-secondary">Simpan Foto &amp; Barcode</button>
-                </form>
+                @if ($photoCount > 0)
+                    <div class="hidden border-t border-slate-100 p-4 peer-checked:block">
+                        <x-ticket-photo-gallery :ticket="$ticket" />
+                    </div>
+                @endif
             </div>
         @empty
             <p class="rounded-lg bg-slate-50 p-6 text-center text-sm text-slate-500">Tidak ada tiket yang cocok dengan filter.</p>

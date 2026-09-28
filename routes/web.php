@@ -9,6 +9,7 @@ use App\Http\Controllers\PtosrVerificationController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\VesselController;
+use App\Models\Ticket;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -26,10 +27,9 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
     Route::get('/tickets/{ticket}/print', [TicketController::class, 'print'])->name('tickets.print');
     Route::post('/tickets/{ticket}/reprint', [TicketController::class, 'reprint'])->name('tickets.reprint');
-    Route::post('/tickets/{ticket}/photos', [TicketController::class, 'updatePhotos'])->name('tickets.photos');
     // Photos are served by Laravel (no public/storage symlink needed), see MediaController.
     Route::get('/tickets/{ticket}/photos/{kind}', MediaController::class)
-        ->whereIn('kind', ['vehicle', 'ticket', 'barcode'])
+        ->whereIn('kind', array_keys(Ticket::PHOTO_KINDS))
         ->name('tickets.photo');
     Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
     Route::post('/tickets/{ticket}/ptosr-verification', [PtosrVerificationController::class, 'store'])->name('tickets.ptosr.store');

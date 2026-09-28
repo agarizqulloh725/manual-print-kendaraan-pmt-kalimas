@@ -18,7 +18,7 @@
                     <p class="truncate text-xs text-slate-500">{{ $vessel->voyage_no }} · input terakhir {{ \Illuminate\Support\Carbon::parse($vessel->last_input_at)->format('d/m/Y H:i') }}</p>
                     <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
                         <span class="rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-700">{{ number_format($vessel->total_vehicles, 0, ',', '.') }} kendaraan</span>
-                        <span class="rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-700">{{ number_format($vessel->total_weight_kg, 0, ',', '.') }} Kg</span>
+                        <span class="rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-700">{{ \App\Models\Ticket::formatTon($vessel->total_weight_ton) }}</span>
                         <span class="rounded-full bg-emerald-100 px-2 py-0.5 font-bold text-emerald-700">✔ {{ $vessel->ptosr_vehicles }} PTOSR</span>
                         @if ($nonPtosr > 0)
                             <span class="rounded-full bg-amber-100 px-2 py-0.5 font-bold text-amber-700">⚠ {{ $nonPtosr }} NON PTOSR</span>

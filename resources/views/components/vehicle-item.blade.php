@@ -11,7 +11,7 @@
             {{ $ticket->created_at->format('d/m/Y H:i') }} · {{ $ticket->ticket_number }}
         </p>
         <p class="mt-1 text-sm text-slate-700">
-            Gol. {{ $ticket->vehicle_class->value }} · {{ number_format($ticket->weight_kg, 0, ',', '.') }} Kg
+            Gol. {{ $ticket->vehicle_class->value }} · {{ $ticket->tonnageLabel() }}
             @if ($showVessel)
                 <span class="text-slate-500">· 🚢 {{ $ticket->vessel_name }} → {{ $ticket->destination_port_name }}</span>
             @endif

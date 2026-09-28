@@ -23,7 +23,7 @@ class ReportController extends Controller
         $vessels = Ticket::query()
             ->filter($filters)
             ->selectRaw('voyage_no, vessel_name, destination_port_name')
-            ->selectRaw('COUNT(*) as total_vehicles, SUM(weight_kg) as total_weight_kg')
+            ->selectRaw('COUNT(*) as total_vehicles, SUM(weight_ton) as total_weight_ton')
             ->selectRaw('SUM(CASE WHEN ptosr_verified_at IS NOT NULL THEN 1 ELSE 0 END) as ptosr_vehicles')
             ->selectRaw('MAX(created_at) as last_input_at')
             ->groupBy('voyage_no', 'vessel_name', 'destination_port_name')
@@ -105,7 +105,7 @@ class ReportController extends Controller
             fwrite($output, "\xEF\xBB\xBF");
             fputcsv($output, [
                 'No', 'No Tiket', 'Tanggal', 'Jam', 'Kapal', 'No Voyage', 'Operator Kapal', 'Pelabuhan Tujuan',
-                'Dermaga', 'Plat Nomor', 'Golongan', 'Mode Berat', 'Berat (Kg)', 'Jumlah Cetak',
+                'Dermaga', 'Plat Nomor', 'Golongan', 'Mode Berat', 'Tonase (Ton)', 'Jumlah Cetak',
                 'Petugas', 'Nilai Barcode', 'Format Barcode', 'Status PTOSR', 'Diverifikasi Oleh',
                 'Waktu Verifikasi', 'Ref PTOSR', 'Catatan PTOSR', 'Foto Kendaraan', 'Foto Tiket', 'Gambar Barcode',
             ], ';');
@@ -131,7 +131,7 @@ class ReportController extends Controller
                         $ticket->plate_number,
                         $ticket->vehicle_class->value,
                         $ticket->weight_mode->label(),
-                        $ticket->weight_kg,
+                        number_format((float) $ticket->weight_ton, 2, ',', ''),
                         $ticket->print_count,
                         $ticket->user?->name,
                         $ticket->barcode_value,
@@ -141,9 +141,9 @@ class ReportController extends Controller
                         $ticket->ptosr_verified_at?->format('d/m/Y H:i'),
                         $ticket->ptosr_reference,
                         $ticket->ptosr_note,
-                        $ticket->vehiclePhotoUrl(),
-                        $ticket->ticketPhotoUrl(),
-                        $ticket->barcodeUrl(),
+                        $ticket->photoUrl('vehicle'),
+                        $ticket->photoUrl('ticket'),
+                        $ticket->photoUrl('barcode'),
                     ], ';');
                 });
 
@@ -153,19 +153,19 @@ class ReportController extends Controller
 
     /**
      * @param  Builder<Ticket>  $query
-     * @return array{vehicles: int, weight_kg: int, ptosr: int}
+     * @return array{vehicles: int, weight_ton: float, ptosr: int}
      */
     private function totals(Builder $query): array
     {
         $totals = $query
-            ->selectRaw('COUNT(*) as vehicles, COALESCE(SUM(weight_kg), 0) as weight_kg')
+            ->selectRaw('COUNT(*) as vehicles, COALESCE(SUM(weight_ton), 0) as weight_ton')
             ->selectRaw('COALESCE(SUM(CASE WHEN ptosr_verified_at IS NOT NULL THEN 1 ELSE 0 END), 0) as ptosr')
             ->toBase()
             ->first();
 
         return [
             'vehicles' => (int) $totals->vehicles,
-            'weight_kg' => (int) $totals->weight_kg,
+            'weight_ton' => (float) $totals->weight_ton,
             'ptosr' => (int) $totals->ptosr,
         ];
     }

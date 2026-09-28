@@ -5,13 +5,11 @@ namespace App\Http\Controllers;
 use App\Enums\VehicleClass;
 use App\Enums\WeightMode;
 use App\Http\Requests\StoreTicketRequest;
-use App\Http\Requests\UploadTicketPhotoRequest;
 use App\Models\Ticket;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class TicketController extends Controller
@@ -42,9 +40,9 @@ class TicketController extends Controller
 
         $ticket = DB::transaction(function () use ($request, $vehiclePhotoPath, $ticketPhotoPath, $barcodePath): Ticket {
             $ticket = $request->user()->tickets()->create([
-                ...$request->safe()->except(['weight_kg', 'vehicle_photo', 'ticket_photo', 'barcode_image']),
+                ...$request->safe()->except(['weight_ton', 'vehicle_photo', 'ticket_photo', 'barcode_image']),
                 'ticket_number' => Ticket::nextTicketNumber(),
-                'weight_kg' => $request->weightKg(),
+                'weight_ton' => $request->weightTon(),
                 'vehicle_photo_path' => $vehiclePhotoPath,
                 'ticket_photo_path' => $ticketPhotoPath,
                 'barcode_path' => $barcodePath,
@@ -108,36 +106,6 @@ class TicketController extends Controller
         return redirect()
             ->route('tickets.print', $ticket)
             ->with('autoprint', true);
-    }
-
-    public function updatePhotos(UploadTicketPhotoRequest $request, Ticket $ticket): RedirectResponse
-    {
-        $replacedPaths = [];
-
-        foreach ([
-            'vehicle_photo' => ['column' => 'vehicle_photo_path', 'folder' => 'vehicle'],
-            'ticket_photo' => ['column' => 'ticket_photo_path', 'folder' => 'ticket'],
-            'barcode_image' => ['column' => 'barcode_path', 'folder' => 'barcode'],
-        ] as $field => ['column' => $column, 'folder' => $folder]) {
-            if (! $request->hasFile($field)) {
-                continue;
-            }
-
-            $replacedPaths[] = $ticket->{$column};
-            $ticket->{$column} = $this->storePhoto($request->file($field), $folder);
-        }
-
-        if ($request->hasFile('ticket_photo') && ! $request->hasFile('barcode_image')) {
-            $replacedPaths[] = $ticket->barcode_path;
-            $ticket->barcode_path = null;
-        }
-
-        $ticket->fill($request->safe()->only(['barcode_value', 'barcode_format']));
-        $ticket->save();
-
-        Storage::disk('public')->delete(array_filter($replacedPaths));
-
-        return back()->with('status', "Foto & barcode tiket {$ticket->ticket_number} berhasil disimpan.");
     }
 
     private function storePhoto(?UploadedFile $photo, string $folder): ?string

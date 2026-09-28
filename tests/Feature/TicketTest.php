@@ -28,7 +28,7 @@ function ticketPayload(array $overrides = []): array
         'plate_number' => 'l  1234   xy',
         'vehicle_class' => VehicleClass::VB->value,
         'weight_mode' => WeightMode::Manual->value,
-        'weight_kg' => 12500,
+        'weight_ton' => '12,5',
         ...$overrides,
     ];
 }
@@ -53,7 +53,7 @@ test('an operator can save a ticket with photos and is sent to the print page', 
     expect($ticket)
         ->user_id->toBe($this->operator->id)
         ->plate_number->toBe('L 1234 XY')
-        ->weight_kg->toBe(12500)
+        ->weight_ton->toBe('12.50')
         ->print_count->toBe(1)
         ->ticket_number->toBe('TMB-'.now()->format('Ymd').'-0001');
 
@@ -91,16 +91,16 @@ test('both photo fields open the camera and still allow picking a file', functio
 test('automatic weight mode uses the vehicle class estimate', function () {
     $this->actingAs($this->operator)->post(route('tickets.store'), ticketPayload([
         'weight_mode' => WeightMode::Automatic->value,
-        'weight_kg' => null,
+        'weight_ton' => null,
     ]));
 
-    expect(Ticket::sole()->weight_kg)->toBe(VehicleClass::VB->defaultWeightKg());
+    expect((float) Ticket::sole()->weight_ton)->toBe(VehicleClass::VB->defaultWeightTon());
 });
 
 test('manual weight mode requires a weight', function () {
     $this->actingAs($this->operator)
-        ->post(route('tickets.store'), ticketPayload(['weight_kg' => null]))
-        ->assertSessionHasErrors('weight_kg');
+        ->post(route('tickets.store'), ticketPayload(['weight_ton' => null]))
+        ->assertSessionHasErrors('weight_ton');
 
     expect(Ticket::count())->toBe(0);
 });
@@ -185,23 +185,48 @@ test('the reprint list is paginated ten tickets per page', function () {
         ->assertViewHas('tickets', fn ($tickets) => $tickets->count() === 2);
 });
 
-test('a ticket photo can be added after printing and replaces the old one', function () {
+test('photos and barcode cannot be uploaded or changed after the ticket is saved', function () {
     $ticket = Ticket::factory()->for($this->operator)->create([
-        'ticket_photo_path' => UploadedFile::fake()->image('lama.jpg')->store('tickets/ticket', 'public'),
+        'ticket_photo_path' => $ticketPhoto = UploadedFile::fake()->image('tiket.jpg')->store('tickets/ticket', 'public'),
+        'barcode_value' => 'ASLI-001',
     ]);
-    $oldPath = $ticket->ticket_photo_path;
 
     $this->actingAs($this->operator)
-        ->from(route('tickets.index'))
-        ->post(route('tickets.photos', $ticket), [
+        ->post("/tickets/{$ticket->id}/photos", [
+            'vehicle_photo' => UploadedFile::fake()->image('kendaraan.jpg'),
             'ticket_photo' => UploadedFile::fake()->image('baru.jpg'),
+            'barcode_value' => 'DIUBAH',
         ])
-        ->assertRedirect(route('tickets.index'));
+        ->assertNotFound();
 
-    $ticket->refresh();
+    expect($ticket->fresh())
+        ->vehicle_photo_path->toBeNull()
+        ->ticket_photo_path->toBe($ticketPhoto)
+        ->barcode_value->toBe('ASLI-001');
+});
 
-    Storage::disk('public')->assertExists($ticket->ticket_photo_path);
-    Storage::disk('public')->assertMissing($oldPath);
+test('the reprint list only shows the photos that exist, without any upload form', function () {
+    $withPhotos = Ticket::factory()->for($this->operator)->create([
+        'plate_number' => 'L 1111 AA',
+        'vehicle_photo_path' => UploadedFile::fake()->image('k.jpg')->store('tickets/vehicle', 'public'),
+    ]);
+    $withoutPhotos = Ticket::factory()->for($this->operator)->create(['plate_number' => 'L 2222 BB']);
+
+    $response = $this->actingAs($this->operator)->get(route('tickets.index'))->assertOk();
+
+    // Stored photo opens in the viewer; missing photos are simply left out.
+    $response->assertSee('href="'.e($withPhotos->photoUrl('vehicle')).'" data-lightbox=', false)
+        ->assertSee('1/3')
+        ->assertDontSee('data-lightbox="Foto Tiket · L 1111 AA"', false);
+
+    // No upload form or photo inputs for any ticket.
+    $response->assertDontSee('enctype="multipart/form-data"', false)
+        ->assertDontSee('data-photo-input', false)
+        ->assertDontSee('data-camera-open', false);
+
+    // A ticket without photos has nothing to open.
+    $response->assertSee('Tidak ada foto')
+        ->assertSee('id="photos_toggle_'.$withoutPhotos->id.'" class="peer sr-only" disabled', false);
 });
 
 test('the extracted barcode is stored separately and the original ticket photo is kept', function () {
@@ -219,7 +244,7 @@ test('the extracted barcode is stored separately and the original ticket photo i
 
     $this->actingAs($this->operator)
         ->get(route('tickets.print', $ticket))
-        ->assertSee($ticket->barcodeUrl());
+        ->assertSee($ticket->photoUrl('barcode'));
 });
 
 test('a barcode without a ticket photo is ignored', function () {
@@ -230,40 +255,38 @@ test('a barcode without a ticket photo is ignored', function () {
     expect(Ticket::sole()->barcode_path)->toBeNull();
 });
 
-test('the barcode can be re-cropped from the existing ticket photo', function () {
-    $ticket = Ticket::factory()->for($this->operator)->create([
-        'ticket_photo_path' => UploadedFile::fake()->image('tiket.jpg')->store('tickets/ticket', 'public'),
-        'barcode_path' => UploadedFile::fake()->image('lama.png')->store('tickets/barcode', 'public'),
-    ]);
-    $originalPhoto = $ticket->ticket_photo_path;
-    $oldBarcode = $ticket->barcode_path;
-
+test('the weight is entered in tonnes: typing 1 means 1 ton', function (string $typed, string $stored, string $printed) {
     $this->actingAs($this->operator)
-        ->post(route('tickets.photos', $ticket), [
-            'barcode_image' => UploadedFile::fake()->image('baru.png'),
-        ])
+        ->post(route('tickets.store'), ticketPayload(['weight_ton' => $typed]))
         ->assertSessionHasNoErrors();
 
-    $ticket->refresh();
+    $ticket = Ticket::sole();
 
-    expect($ticket->ticket_photo_path)->toBe($originalPhoto)
-        ->and($ticket->barcode_path)->not->toBe($oldBarcode);
-    Storage::disk('public')->assertMissing($oldBarcode);
+    expect($ticket->weight_ton)->toBe($stored);
+
+    $this->actingAs($this->operator)
+        ->get(route('tickets.print', $ticket))
+        ->assertSee($printed);
+})->with([
+    'one ton' => ['1', '1.00', '1,00 Ton'],
+    'decimal comma' => ['12,5', '12.50', '12,50 Ton'],
+    'decimal point' => ['0.35', '0.35', '0,35 Ton'],
+]);
+
+test('tonnage accepts at most two decimals', function () {
+    $this->actingAs($this->operator)
+        ->post(route('tickets.store'), ticketPayload(['weight_ton' => '1,255']))
+        ->assertSessionHasErrors('weight_ton');
 });
 
-test('replacing the ticket photo without a new barcode removes the stale barcode', function () {
-    $ticket = Ticket::factory()->for($this->operator)->create([
-        'ticket_photo_path' => UploadedFile::fake()->image('tiket.jpg')->store('tickets/ticket', 'public'),
-        'barcode_path' => UploadedFile::fake()->image('lama.png')->store('tickets/barcode', 'public'),
-    ]);
-    $oldBarcode = $ticket->barcode_path;
+test('the printed ticket shows the weight as tonnage in tonnes', function () {
+    $ticket = Ticket::factory()->for($this->operator)->create(['weight_ton' => 12.5]);
 
-    $this->actingAs($this->operator)->post(route('tickets.photos', $ticket), [
-        'ticket_photo' => UploadedFile::fake()->image('baru.jpg'),
-    ]);
-
-    expect($ticket->fresh()->barcode_path)->toBeNull();
-    Storage::disk('public')->assertMissing($oldBarcode);
+    $this->actingAs($this->operator)
+        ->get(route('tickets.print', $ticket))
+        ->assertSee('Tonase')
+        ->assertSee('12,50 Ton')
+        ->assertDontSee('Kg');
 });
 
 test('the scanned barcode value and format are stored and printed', function () {
@@ -294,24 +317,6 @@ test('a barcode format without a value is not stored', function () {
         ->barcode_format->toBeNull();
 });
 
-test('the barcode value can be corrected from the reprint tab', function () {
-    $ticket = Ticket::factory()->for($this->operator)->create([
-        'barcode_value' => 'SALAH-BACA',
-        'barcode_format' => 'Code128',
-    ]);
-
-    $this->actingAs($this->operator)
-        ->post(route('tickets.photos', $ticket), [
-            'barcode_value' => 'TMB-TIKET-0009999',
-            'barcode_format' => '',
-        ])
-        ->assertSessionHasNoErrors();
-
-    expect($ticket->fresh())
-        ->barcode_value->toBe('TMB-TIKET-0009999')
-        ->barcode_format->toBeNull();
-});
-
 test('tickets can be searched by barcode value', function () {
     Ticket::factory()->for($this->operator)->create(['plate_number' => 'L 1111 AA', 'barcode_value' => 'ABC-777']);
     Ticket::factory()->for($this->operator)->create(['plate_number' => 'W 2222 BB', 'barcode_value' => 'XYZ-888']);
@@ -323,11 +328,11 @@ test('tickets can be searched by barcode value', function () {
 });
 
 test('uploaded ticket photos must be images', function () {
-    $ticket = Ticket::factory()->for($this->operator)->create();
-
     $this->actingAs($this->operator)
-        ->post(route('tickets.photos', $ticket), [
+        ->post(route('tickets.store'), ticketPayload([
             'ticket_photo' => UploadedFile::fake()->create('dokumen.pdf', 10, 'application/pdf'),
-        ])
+        ]))
         ->assertSessionHasErrors('ticket_photo');
+
+    expect(Ticket::count())->toBe(0);
 });

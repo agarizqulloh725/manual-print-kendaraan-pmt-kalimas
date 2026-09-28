@@ -33,7 +33,7 @@ class UpdateTicketRequest extends FormRequest
             'plate_number' => ['required', 'string', 'regex:/^[A-Z0-9 ]{3,15}$/'],
             'vehicle_class' => ['required', Rule::enum(VehicleClass::class)],
             'weight_mode' => ['required', Rule::enum(WeightMode::class)],
-            'weight_kg' => ['required', 'integer', 'min:1', 'max:200000'],
+            'weight_ton' => ['required', 'numeric', 'decimal:0,2', 'min:0.01', 'max:500'],
             'destination_port_name' => ['required', 'string', 'max:100'],
             'barcode_value' => ['nullable', 'string', 'max:255'],
             'barcode_format' => ['nullable', 'string', 'max:30'],
@@ -49,7 +49,7 @@ class UpdateTicketRequest extends FormRequest
             'plate_number' => 'plat nomor',
             'vehicle_class' => 'golongan',
             'weight_mode' => 'mode berat',
-            'weight_kg' => 'berat',
+            'weight_ton' => 'tonase',
             'destination_port_name' => 'pelabuhan tujuan',
             'barcode_value' => 'nilai barcode',
         ];
@@ -62,6 +62,7 @@ class UpdateTicketRequest extends FormRequest
     {
         return [
             'plate_number.regex' => 'Plat nomor hanya boleh huruf, angka, dan spasi. Contoh: L 1234 XY.',
+            'weight_ton.decimal' => 'Tonase maksimal 2 angka di belakang koma. Contoh: 12,5.',
         ];
     }
 
@@ -70,6 +71,8 @@ class UpdateTicketRequest extends FormRequest
         $this->merge([
             'plate_number' => Str::of((string) $this->input('plate_number'))->upper()->squish()->toString(),
             'destination_port_name' => Str::of((string) $this->input('destination_port_name'))->upper()->squish()->toString(),
+            // Accept the Indonesian decimal comma: "12,5" means 12.5 ton.
+            'weight_ton' => str_replace(',', '.', trim((string) $this->input('weight_ton'))),
         ]);
 
         $this->normalizeBarcodeInput();

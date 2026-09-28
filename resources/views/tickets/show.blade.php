@@ -25,7 +25,7 @@
                 'Tujuan' => $ticket->destination_port_name,
                 'Dermaga' => $ticket->berth_name,
                 'Golongan' => $ticket->vehicle_class->label(),
-                'Berat' => number_format($ticket->weight_kg, 0, ',', '.').' Kg ('.$ticket->weight_mode->label().')',
+                'Tonase' => $ticket->tonnageLabel().' ('.$ticket->weight_mode->label().')',
                 'Nilai Barcode' => $ticket->barcode_value ? $ticket->barcode_value.($ticket->barcode_format ? " ({$ticket->barcode_format})" : '') : null,
                 'Petugas Input' => $ticket->user ? "{$ticket->user->name} · {$ticket->user->phone}" : null,
                 'Jumlah Cetak' => $ticket->print_count.'x'.($ticket->last_printed_at ? ', terakhir '.$ticket->last_printed_at->format('d/m/Y H:i') : ''),
@@ -42,8 +42,6 @@
                 @csrf
                 <button type="submit" class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-bold text-white hover:bg-sky-700">🖨️ Cetak Ulang</button>
             </form>
-            <a href="{{ route('tickets.index', ['search' => $ticket->ticket_number, 'date_from' => $ticket->created_at->toDateString(), 'date_to' => $ticket->created_at->toDateString()]) }}"
-               class="rounded-lg bg-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-300">📷 Kelola Foto</a>
         </div>
     </section>
 
@@ -51,13 +49,13 @@
         <h3 class="mb-2 text-sm font-bold tracking-wide text-slate-600 uppercase">Foto</h3>
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
             @foreach ([
-                'Foto Kendaraan' => $ticket->vehiclePhotoUrl(),
-                'Foto Tiket' => $ticket->ticketPhotoUrl(),
-                'Barcode' => $ticket->barcodeUrl(),
+                'Foto Kendaraan' => $ticket->photoUrl('vehicle'),
+                'Foto Tiket' => $ticket->photoUrl('ticket'),
+                'Barcode' => $ticket->photoUrl('barcode'),
             ] as $label => $url)
                 <figure class="flex flex-col gap-1">
                     @if ($url)
-                        <a href="{{ $url }}" target="_blank" class="flex aspect-video items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white">
+                        <a href="{{ $url }}" data-lightbox="{{ $label }} · {{ $ticket->plate_number }}" class="flex aspect-video items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white">
                             <img src="{{ $url }}" alt="{{ $label }}" @class(['size-full', 'object-contain p-2' => $label === 'Barcode', 'object-cover' => $label !== 'Barcode'])>
                         </a>
                     @else

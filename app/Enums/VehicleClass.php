@@ -39,21 +39,24 @@ enum VehicleClass: string
         };
     }
 
-    public function defaultWeightKg(): int
+    /**
+     * Estimated weight in tonnes.
+     */
+    public function defaultWeightTon(): float
     {
         return match ($this) {
-            self::I => 100,
-            self::II => 200,
-            self::III => 350,
-            self::IVA => 2000,
-            self::IVB => 4000,
-            self::VA => 8000,
-            self::VB => 12000,
-            self::VIA => 16000,
-            self::VIB => 20000,
-            self::VII => 30000,
-            self::VIII => 40000,
-            self::IX => 50000,
+            self::I => 0.1,
+            self::II => 0.2,
+            self::III => 0.35,
+            self::IVA => 2.0,
+            self::IVB => 4.0,
+            self::VA => 8.0,
+            self::VB => 12.0,
+            self::VIA => 16.0,
+            self::VIB => 20.0,
+            self::VII => 30.0,
+            self::VIII => 40.0,
+            self::IX => 50.0,
         };
     }
 }

@@ -37,7 +37,7 @@
             <label for="vehicle_class" class="form-label">Golongan / Jenis</label>
             <select id="vehicle_class" name="vehicle_class" required class="form-input" data-vehicle-class>
                 @foreach ($vehicleClasses as $vehicleClass)
-                    <option value="{{ $vehicleClass->value }}" data-default-weight="{{ $vehicleClass->defaultWeightKg() }}"
+                    <option value="{{ $vehicleClass->value }}" data-default-weight="{{ str_replace('.', ',', (string) $vehicleClass->defaultWeightTon()) }}"
                             @selected(old('vehicle_class', 'I') === $vehicleClass->value)>
                         {{ $vehicleClass->label() }}
                     </option>
@@ -46,7 +46,7 @@
         </div>
 
         <div>
-            <span class="form-label">Berat / Tonase (Kg)</span>
+            <span class="form-label">Berat / Tonase (Ton)</span>
             <div class="mb-3 flex gap-6">
                 @foreach ($weightModes as $weightMode)
                     <label class="flex items-center gap-2 text-sm text-slate-600">
@@ -56,9 +56,14 @@
                     </label>
                 @endforeach
             </div>
-            <input id="weight_kg" name="weight_kg" type="number" min="1" max="200000" inputmode="numeric"
-                   value="{{ old('weight_kg') }}" placeholder="0" class="form-input" data-weight-input>
-            <p class="mt-1 hidden text-xs text-slate-500" data-weight-hint>Berat otomatis diisi dari estimasi golongan kendaraan.</p>
+            <div class="relative">
+                <input id="weight_ton" name="weight_ton" type="text" inputmode="decimal" autocomplete="off"
+                       value="{{ old('weight_ton') }}" placeholder="Contoh: 1 atau 12,5" aria-describedby="weight_ton_unit"
+                       class="form-input pr-14" data-weight-input>
+                <span id="weight_ton_unit" class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-sm font-bold text-slate-500">Ton</span>
+            </div>
+            <p class="mt-1 text-xs text-slate-500">Isi dalam ton. Contoh: <strong>1</strong> = 1 ton, <strong>12,5</strong> = 12,5 ton.</p>
+            <p class="mt-1 hidden text-xs text-slate-500" data-weight-hint>Tonase otomatis diisi dari estimasi golongan kendaraan.</p>
         </div>
 
         <x-photo-fields />

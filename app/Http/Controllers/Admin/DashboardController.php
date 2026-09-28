@@ -47,7 +47,7 @@ class DashboardController extends Controller
                 ->get(),
             'vesselsToday' => Ticket::query()
                 ->filter($today)
-                ->selectRaw('voyage_no, vessel_name, destination_port_name, COUNT(*) as total, SUM(weight_kg) as total_weight_kg')
+                ->selectRaw('voyage_no, vessel_name, destination_port_name, COUNT(*) as total, SUM(weight_ton) as total_weight_ton')
                 ->selectRaw('SUM(CASE WHEN ptosr_verified_at IS NOT NULL THEN 1 ELSE 0 END) as ptosr')
                 ->groupBy('voyage_no', 'vessel_name', 'destination_port_name')
                 ->orderByDesc('total')

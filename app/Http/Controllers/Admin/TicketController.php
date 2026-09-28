@@ -68,7 +68,7 @@ class TicketController extends Controller
 
     public function destroy(Ticket $ticket): RedirectResponse
     {
-        $photoPaths = array_filter([$ticket->vehicle_photo_path, $ticket->ticket_photo_path, $ticket->barcode_path]);
+        $photoPaths = array_filter(array_map($ticket->photoPath(...), array_keys(Ticket::PHOTO_KINDS)));
 
         $ticket->delete();
 

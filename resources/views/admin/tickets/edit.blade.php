@@ -36,8 +36,12 @@
 
             <div class="grid grid-cols-[1fr_auto] gap-3">
                 <div>
-                    <label for="weight_kg" class="form-label">Berat (Kg)</label>
-                    <input id="weight_kg" name="weight_kg" type="number" min="1" max="200000" required value="{{ old('weight_kg', $ticket->weight_kg) }}" class="form-input">
+                    <label for="weight_ton" class="form-label">Tonase (Ton)</label>
+                    <div class="relative">
+                        <input id="weight_ton" name="weight_ton" type="text" inputmode="decimal" required autocomplete="off"
+                               value="{{ old('weight_ton', str_replace('.', ',', (string) $ticket->weight_ton)) }}" class="form-input pr-14">
+                        <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-sm font-bold text-slate-500">Ton</span>
+                    </div>
                 </div>
                 <div>
                     <label for="weight_mode" class="form-label">Mode</label>

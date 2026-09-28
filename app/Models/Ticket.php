@@ -24,7 +24,7 @@ use Illuminate\Support\Carbon;
     'plate_number',
     'vehicle_class',
     'weight_mode',
-    'weight_kg',
+    'weight_ton',
     'vehicle_photo_path',
     'ticket_photo_path',
     'barcode_path',
@@ -41,6 +41,18 @@ class Ticket extends Model
     public const PTOSR_UNVERIFIED = 'non_ptosr';
 
     /**
+     * The images a ticket can have, keyed by the kind used in URLs, mapped to their database column.
+     * "barcode" is the background-free barcode cut out of the ticket photo, printed at the bottom of the ticket.
+     *
+     * @var array<'vehicle'|'ticket'|'barcode', string>
+     */
+    public const PHOTO_KINDS = [
+        'vehicle' => 'vehicle_photo_path',
+        'ticket' => 'ticket_photo_path',
+        'barcode' => 'barcode_path',
+    ];
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -50,7 +62,7 @@ class Ticket extends Model
         return [
             'vehicle_class' => VehicleClass::class,
             'weight_mode' => WeightMode::class,
-            'weight_kg' => 'integer',
+            'weight_ton' => 'decimal:2',
             'print_count' => 'integer',
             'last_printed_at' => 'datetime',
             'ptosr_verified_at' => 'datetime',
@@ -127,31 +139,67 @@ class Ticket extends Model
             ->when(($filters['ptosr'] ?? null) === self::PTOSR_UNVERIFIED, fn (Builder $query) => $query->whereNull('ptosr_verified_at'));
     }
 
-    public function vehiclePhotoUrl(): ?string
+    /**
+     * The ticket weight, e.g. "12,50 Ton".
+     */
+    public function tonnageLabel(): string
     {
-        return $this->photoUrl('vehicle', $this->vehicle_photo_path);
-    }
-
-    public function ticketPhotoUrl(): ?string
-    {
-        return $this->photoUrl('ticket', $this->ticket_photo_path);
+        return self::formatTon($this->weight_ton);
     }
 
     /**
-     * Background-free barcode cut out of the ticket photo, printed at the bottom of the ticket.
+     * Format a weight in tonnes the Indonesian way: 1 → "1,00 Ton", 12.5 → "12,50 Ton".
      */
-    public function barcodeUrl(): ?string
+    public static function formatTon(float|int|string|null $tonnes): string
     {
-        return $this->photoUrl('barcode', $this->barcode_path);
+        return number_format((float) $tonnes, 2, ',', '.').' Ton';
     }
 
     /**
-     * Photos are served by a Laravel route rather than the public/storage symlink (see MediaController).
-     * "v" changes whenever the stored file changes, so browsers never show a replaced photo from cache.
+     * Stored path (relative to the public disk) of one photo kind, or null when it was not taken.
      */
-    private function photoUrl(string $kind, ?string $path): ?string
+    public function photoPath(string $kind): ?string
     {
+        $column = self::PHOTO_KINDS[$kind] ?? null;
+
+        return $column ? $this->{$column} : null;
+    }
+
+    /**
+     * THE way to show any ticket image (vehicle photo, ticket photo, barcode), everywhere in the app.
+     *
+     * The URL points to MediaController, which reads the file from storage itself. So images work on
+     * shared hosting without the public/storage symlink, on whatever domain the page was opened, and only
+     * for logged-in users. "v" changes whenever the stored file changes, so browsers never show a stale cache.
+     */
+    public function photoUrl(string $kind): ?string
+    {
+        $path = $this->photoPath($kind);
+
         return $path ? route('tickets.photo', ['ticket' => $this, 'kind' => $kind, 'v' => substr(md5($path), 0, 8)]) : null;
+    }
+
+    /**
+     * How many of the three images exist for this ticket.
+     */
+    public function photoCount(): int
+    {
+        return collect(array_keys(self::PHOTO_KINDS))->filter(fn (string $kind) => $this->photoPath($kind))->count();
+    }
+
+    /**
+     * Content type from the file extension. Deliberately not using the fileinfo extension,
+     * which is missing or disabled on some shared hosting.
+     */
+    public static function photoMimeType(string $path): string
+    {
+        return match (strtolower(pathinfo($path, PATHINFO_EXTENSION))) {
+            'jpg', 'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'webp' => 'image/webp',
+            'gif' => 'image/gif',
+            default => 'application/octet-stream',
+        };
     }
 
     public function markPrinted(): void

@@ -33,7 +33,7 @@ class TicketFactory extends Factory
             'plate_number' => 'L '.fake()->numerify('####').' '.fake()->lexify('??'),
             'vehicle_class' => fake()->randomElement(VehicleClass::cases()),
             'weight_mode' => WeightMode::Manual,
-            'weight_kg' => fake()->numberBetween(1000, 40000),
+            'weight_ton' => fake()->randomFloat(2, 1, 40),
             'print_count' => 1,
             'last_printed_at' => now(),
         ];

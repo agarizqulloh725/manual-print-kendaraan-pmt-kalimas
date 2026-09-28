@@ -3,33 +3,37 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ticket;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Serves ticket photos straight from storage/app/public.
+ * Sends a ticket image (vehicle photo, ticket photo, barcode) straight from storage/app/public.
  *
- * Going through Laravel instead of the public/storage symlink means photos work on shared hosting
- * where symlinks are missing or not followed, the URL always matches the host the user opened, and
- * only logged-in users can see them. The URL has no file extension on purpose: some hosting setups
- * (nginx in front of Apache) serve *.jpg URLs as static files and never reach PHP.
+ * Built to work on shared hosting:
+ * - no public/storage symlink needed;
+ * - the file is read with a plain file read and returned as a normal response, instead of a stream
+ *   (streaming relies on fpassthru(), which some hosts disable);
+ * - the content type comes from the file extension, not the fileinfo extension;
+ * - the URL has no .jpg/.png ending, so an nginx proxy in front of Apache cannot swallow it as a static file.
+ * Only logged-in users can see images (the route sits in the auth group).
  */
 class MediaController extends Controller
 {
-    public function __invoke(Ticket $ticket, string $kind): StreamedResponse
+    public function __invoke(Ticket $ticket, string $kind): Response
     {
-        $path = match ($kind) {
-            'vehicle' => $ticket->vehicle_photo_path,
-            'ticket' => $ticket->ticket_photo_path,
-            'barcode' => $ticket->barcode_path,
-        };
-
+        $path = $ticket->photoPath($kind);
         $disk = Storage::disk('public');
 
         abort_unless($path && $disk->exists($path), 404);
 
-        return $disk->response($path, null, [
-            // The URL carries a version derived from the file name, so a replaced photo gets a new URL.
+        $contents = $disk->get($path);
+
+        abort_if($contents === null, 404);
+
+        return response($contents, 200, [
+            'Content-Type' => Ticket::photoMimeType($path),
+            'Content-Length' => (string) strlen($contents),
+            'Content-Disposition' => 'inline; filename="'.basename($path).'"',
             'Cache-Control' => 'private, max-age=86400',
             'X-Content-Type-Options' => 'nosniff',
         ]);
