@@ -1,4 +1,5 @@
 import { initBarcodeCroppers } from './barcode';
+import { initCameraButtons } from './camera';
 
 const MAX_PHOTO_DIMENSION = 1600;
 const PHOTO_QUALITY = 0.8;
@@ -176,6 +177,7 @@ function initSubmitGuard() {
 
 document.addEventListener('DOMContentLoaded', () => {
     initPhotoInputs();
+    initCameraButtons();
     initBarcodeCroppers();
     initVesselSelect();
     initWeightMode();

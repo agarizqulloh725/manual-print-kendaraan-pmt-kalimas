@@ -31,7 +31,7 @@ Aplikasi dibuat dengan Laravel 13 (PHP 8.3+), MySQL, dan aset front-end yang sud
 | Ekstensi PHP | `bcmath`, `ctype`, `curl`, `dom`, `fileinfo`, `mbstring`, `openssl`, `pdo_mysql`, `tokenizer`, `xml`. `fileinfo` wajib untuk upload foto. |
 | **MySQL 8 / MariaDB 10.6+** | Aplikasi sudah diuji di MySQL 8.4. |
 | **Terminal / SSH** | Dibutuhkan untuk menjalankan perintah `php artisan`. Di cPanel biasanya ada menu *Terminal*. Jika tidak ada, minta akses SSH ke penyedia hosting. |
-| **HTTPS (SSL)** | Aktifkan *AutoSSL* / Let's Encrypt di cPanel. |
+| **HTTPS (SSL)** | Aktifkan *AutoSSL* / Let's Encrypt di cPanel. **Wajib untuk kamera:** browser hanya mengizinkan akses kamera di `https://` (atau `localhost`). Lewat `http://` tombol Kamera hanya bisa membuka pemilih file. |
 | Koneksi keluar ke `ptosr.pelindo.co.id` | Server harus boleh mengakses `https://ptosr.pelindo.co.id` untuk mengambil daftar kapal. Beberapa hosting memblokir koneksi keluar. Cek di [bagian 8](#8-setelah-online-akun--pengecekan). |
 | Ruang disk | ±150 MB untuk aplikasi, ditambah ruang untuk foto (±200–400 KB per foto). |
 
@@ -346,6 +346,9 @@ Hasil yang benar adalah `HTTP/1.1 200 OK`. Jika gagal atau timeout, minta penyed
 | **Jam tiket selisih 7 jam** | `APP_TIMEZONE=Asia/Jakarta` belum diisi atau cache konfigurasi lama. Isi, lalu jalankan `php artisan optimize`. |
 | *419 Page Expired* saat login / simpan | Sesi habis atau cookie ditolak. Jika situs belum HTTPS, set `SESSION_SECURE_COOKIE=false`. Pastikan tabel `sessions` ada (`php artisan migrate --force`). |
 | Upload foto gagal / *"The foto ... failed to upload"* | Naikkan `upload_max_filesize` & `post_max_size` (bagian 7). |
+| **Tombol Kamera membuka pemilih file**, bukan kamera | Situs dibuka lewat `http://`. Aktifkan SSL dan buka lewat `https://`. |
+| *"Izin kamera ditolak"* | Klik ikon 🔒 / 📷 di address bar, lalu izinkan **Kamera** untuk situs ini, kemudian muat ulang halaman. |
+| *"Kamera sedang dipakai aplikasi lain"* | Tutup aplikasi lain yang memakai webcam (Zoom, Teams, aplikasi kamera). |
 | Barcode tidak terbaca otomatis | Pastikan `public_html/.htaccess` berasal dari versi terbaru (berisi `AddType application/wasm .wasm`), dan folder `build/` lengkap (ada file `zxing_reader-*.wasm`). Nilai barcode tetap bisa diketik manual. |
 | Perubahan `.env` tidak berpengaruh | Jalankan `php artisan optimize` (atau `php artisan config:clear`). |
 | Lupa password admin | Di Terminal: `php artisan tinker --execute 'App\Models\User::where("phone","08xxxxxxxxxx")->first()->update(["password" => "PasswordBaru123"]);'` |

@@ -77,6 +77,15 @@ test('both photo fields are marked optional on the input form', function () {
         ->assertSeeInOrder(['Foto Kendaraan', 'OPSIONAL', 'Foto Tiket', 'OPSIONAL']);
 });
 
+test('both photo fields open the camera and still allow picking a file', function () {
+    $this->actingAs($this->operator)
+        ->get(route('tickets.create'))
+        ->assertSee('data-camera-open="vehicle_photo"', false)
+        ->assertSee('data-camera-open="ticket_photo"', false)
+        ->assertSee('for="vehicle_photo"', false)
+        ->assertSee('📁 Pilih File');
+});
+
 test('automatic weight mode uses the vehicle class estimate', function () {
     $this->actingAs($this->operator)->post(route('tickets.store'), ticketPayload([
         'weight_mode' => WeightMode::Automatic->value,
