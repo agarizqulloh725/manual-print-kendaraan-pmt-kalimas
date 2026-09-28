@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\TicketController as AdminTicketController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\MediaController;
 use App\Http\Controllers\PtosrVerificationController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TicketController;
@@ -26,6 +27,10 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/tickets/{ticket}/print', [TicketController::class, 'print'])->name('tickets.print');
     Route::post('/tickets/{ticket}/reprint', [TicketController::class, 'reprint'])->name('tickets.reprint');
     Route::post('/tickets/{ticket}/photos', [TicketController::class, 'updatePhotos'])->name('tickets.photos');
+    // Photos are served by Laravel (no public/storage symlink needed), see MediaController.
+    Route::get('/tickets/{ticket}/photos/{kind}', MediaController::class)
+        ->whereIn('kind', ['vehicle', 'ticket', 'barcode'])
+        ->name('tickets.photo');
     Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
     Route::post('/tickets/{ticket}/ptosr-verification', [PtosrVerificationController::class, 'store'])->name('tickets.ptosr.store');
     Route::delete('/tickets/{ticket}/ptosr-verification', [PtosrVerificationController::class, 'destroy'])->name('tickets.ptosr.destroy');

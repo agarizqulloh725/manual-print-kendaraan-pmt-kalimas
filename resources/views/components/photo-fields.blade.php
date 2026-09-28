@@ -18,7 +18,7 @@
 
 {{-- Relative source URL keeps the canvas same-origin even when APP_URL differs from the host used in the browser. --}}
 <div class="flex flex-col gap-4" data-barcode-cropper="{{ $ticketInputId }}"
-     data-source-url="{{ $ticketPhotoUrl ? parse_url($ticketPhotoUrl, PHP_URL_PATH) : '' }}">
+     data-source-url="{{ $ticketPhotoUrl ? parse_url($ticketPhotoUrl, PHP_URL_PATH).'?'.parse_url($ticketPhotoUrl, PHP_URL_QUERY) : '' }}">
     <div class="grid grid-cols-2 gap-3 sm:gap-4">
         <x-photo-input name="vehicle_photo" :id="'vehicle_photo'.$idSuffix" :label="$vehicleLabel" :current-url="$vehiclePhotoUrl" optional />
         <x-photo-input name="ticket_photo" :id="$ticketInputId" :label="$ticketLabel" :current-url="$ticketPhotoUrl" optional />

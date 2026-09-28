@@ -108,8 +108,7 @@ Struktur akhir di server (`cpuser` = username cPanel Anda):
     ├── .htaccess
     ├── favicon.ico
     ├── index.php          ← diedit (lihat di bawah)
-    ├── robots.txt
-    └── storage            ← symlink, dibuat di langkah 6
+    └── robots.txt
 ```
 
 Langkah:
@@ -234,19 +233,9 @@ php artisan db:seed --force
 chmod -R 775 storage bootstrap/cache
 ```
 
-**Link folder foto (`storage`):**
-
-- **Opsi A** (public_html). Buat symlink secara manual, karena `php artisan storage:link` akan membuat link di tempat yang salah:
-
-  ```bash
-  ln -s ~/roro-app/storage/app/public ~/public_html/storage
-  ```
-
-- **Opsi B** (subdomain):
-
-  ```bash
-  php artisan storage:link
-  ```
+> **Tidak perlu `php artisan storage:link` / symlink.** Foto disimpan di `roro-app/storage/app/public/tickets/`
+> dan ditampilkan lewat aplikasi (alamat `/tickets/{id}/photos/...`, hanya untuk user yang login).
+> Jadi foto tetap tampil walaupun hosting tidak mengizinkan symlink.
 
 **Terakhir, optimasi untuk produksi:**
 
@@ -341,7 +330,8 @@ Hasil yang benar adalah `HTTP/1.1 200 OK`. Jika gagal atau timeout, minta penyed
 |---|---|
 | **Error 500** (halaman putih) | Lihat `roro-app/storage/logs/laravel-*.log`. Penyebab umum: `APP_KEY` kosong (jalankan `php artisan key:generate --force`), izin folder `storage` / `bootstrap/cache` (jalankan `chmod -R 775`), atau versi PHP di bawah 8.3. |
 | *Vite manifest not found* / tampilan tanpa CSS | Folder `build/` belum ada di `public_html` (Opsi A), baris `usePublicPath` belum ditambahkan di `index.php`, atau file `public_html/hot` masih ada (hapus). |
-| **Foto tidak tampil (404)** | Symlink `public_html/storage` belum dibuat (lihat langkah 6), atau `APP_URL` tidak sama dengan alamat yang dibuka. Setelah mengubah `.env`, jalankan `php artisan optimize`. |
+| **Foto tidak tampil** | Pastikan aplikasi versi terbaru sudah di-upload (foto dibuka lewat `/tickets/{id}/photos/...`, bukan `/storage/...`), lalu jalankan `php artisan optimize`. Cek file fotonya ada di `roro-app/storage/app/public/tickets/`, dan folder `storage` bisa dibaca (`chmod -R 775 storage`). Buka alamat foto langsung di browser (dalam keadaan login): pesan 404 berarti file tidak ada, sedangkan halaman login berarti sesi sudah habis. |
+| Link foto di file CSV membuka halaman login | Normal. Foto hanya bisa dilihat oleh user yang login. Login dulu di browser yang sama, lalu buka lagi link-nya. |
 | *"Gagal mengambil data kapal dari PTOS-R"* | Server tidak bisa mengakses `ptosr.pelindo.co.id`. Cek dengan perintah `curl` di bagian 8, dan lihat status di dashboard admin. |
 | **Jam tiket selisih 7 jam** | `APP_TIMEZONE=Asia/Jakarta` belum diisi atau cache konfigurasi lama. Isi, lalu jalankan `php artisan optimize`. |
 | *419 Page Expired* saat login / simpan | Sesi habis atau cookie ditolak. Jika situs belum HTTPS, set `SESSION_SECURE_COOKIE=false`. Pastikan tabel `sessions` ada (`php artisan migrate --force`). |

@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
     'ticket_number',
@@ -130,12 +129,12 @@ class Ticket extends Model
 
     public function vehiclePhotoUrl(): ?string
     {
-        return $this->vehicle_photo_path ? Storage::disk('public')->url($this->vehicle_photo_path) : null;
+        return $this->photoUrl('vehicle', $this->vehicle_photo_path);
     }
 
     public function ticketPhotoUrl(): ?string
     {
-        return $this->ticket_photo_path ? Storage::disk('public')->url($this->ticket_photo_path) : null;
+        return $this->photoUrl('ticket', $this->ticket_photo_path);
     }
 
     /**
@@ -143,7 +142,16 @@ class Ticket extends Model
      */
     public function barcodeUrl(): ?string
     {
-        return $this->barcode_path ? Storage::disk('public')->url($this->barcode_path) : null;
+        return $this->photoUrl('barcode', $this->barcode_path);
+    }
+
+    /**
+     * Photos are served by a Laravel route rather than the public/storage symlink (see MediaController).
+     * "v" changes whenever the stored file changes, so browsers never show a replaced photo from cache.
+     */
+    private function photoUrl(string $kind, ?string $path): ?string
+    {
+        return $path ? route('tickets.photo', ['ticket' => $this, 'kind' => $kind, 'v' => substr(md5($path), 0, 8)]) : null;
     }
 
     public function markPrinted(): void
