@@ -20,8 +20,8 @@
 <div class="flex flex-col gap-4" data-barcode-cropper="{{ $ticketInputId }}"
      data-source-url="{{ $ticketPhotoUrl ? parse_url($ticketPhotoUrl, PHP_URL_PATH) : '' }}">
     <div class="grid grid-cols-2 gap-3 sm:gap-4">
-        <x-photo-input name="vehicle_photo" :id="'vehicle_photo'.$idSuffix" :label="$vehicleLabel" :current-url="$vehiclePhotoUrl" />
-        <x-photo-input name="ticket_photo" :id="$ticketInputId" :label="$ticketLabel" :current-url="$ticketPhotoUrl" />
+        <x-photo-input name="vehicle_photo" :id="'vehicle_photo'.$idSuffix" :label="$vehicleLabel" :current-url="$vehiclePhotoUrl" optional />
+        <x-photo-input name="ticket_photo" :id="$ticketInputId" :label="$ticketLabel" :current-url="$ticketPhotoUrl" optional />
     </div>
 
     <section @class(['rounded-xl border border-slate-200 bg-slate-50 p-3 sm:p-4', 'hidden' => ! $ticketPhotoUrl && blank($barcodeValue)]) data-barcode-panel>

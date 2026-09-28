@@ -1,20 +1,22 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Admin;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
-class RegisterRequest extends FormRequest
+class StoreUserRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return true;
+        return (bool) $this->user()?->isAdmin();
     }
 
     /**
@@ -26,7 +28,8 @@ class RegisterRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:100'],
-            'phone' => ['required', 'string', 'regex:/^08\d{8,12}$/', 'unique:users,phone'],
+            'phone' => ['required', 'string', 'regex:/^08\d{8,12}$/', Rule::unique('users', 'phone')],
+            'role' => ['required', Rule::enum(UserRole::class)],
             'password' => ['required', 'confirmed', Password::min(6)],
         ];
     }
@@ -39,7 +42,7 @@ class RegisterRequest extends FormRequest
         return [
             'name' => 'nama',
             'phone' => 'nomor HP',
-            'password' => 'password',
+            'role' => 'peran',
         ];
     }
 

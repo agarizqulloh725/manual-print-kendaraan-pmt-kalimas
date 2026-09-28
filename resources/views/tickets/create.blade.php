@@ -61,7 +61,7 @@
             <p class="mt-1 hidden text-xs text-slate-500" data-weight-hint>Berat otomatis diisi dari estimasi golongan kendaraan.</p>
         </div>
 
-        <x-photo-fields ticket-label="🧾 Foto Tiket (opsional)" />
+        <x-photo-fields />
 
         <button type="submit" class="btn-primary">🖨️ SIMPAN &amp; CETAK TIKET</button>
     </form>

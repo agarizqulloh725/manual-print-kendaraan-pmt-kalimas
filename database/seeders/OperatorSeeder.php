@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -11,14 +12,14 @@ class OperatorSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Default operator accounts. Safe to run repeatedly: existing phone numbers are updated, not duplicated.
+     * Default accounts. Safe to run repeatedly: existing phone numbers are updated, not duplicated.
      *
-     * @var list<array{name: string, phone: string, password: string}>
+     * @var list<array{name: string, phone: string, password: string, role: UserRole}>
      */
-    private const OPERATORS = [
-        ['name' => 'Admin Operator', 'phone' => '081200000001', 'password' => 'password'],
-        ['name' => 'Operator Shift 1', 'phone' => '081200000002', 'password' => 'password'],
-        ['name' => 'Operator Shift 2', 'phone' => '081200000003', 'password' => 'password'],
+    private const USERS = [
+        ['name' => 'Administrator', 'phone' => '081200000001', 'password' => 'password', 'role' => UserRole::Admin],
+        ['name' => 'Operator Shift 1', 'phone' => '081200000002', 'password' => 'password', 'role' => UserRole::Operator],
+        ['name' => 'Operator Shift 2', 'phone' => '081200000003', 'password' => 'password', 'role' => UserRole::Operator],
     ];
 
     /**
@@ -26,10 +27,10 @@ class OperatorSeeder extends Seeder
      */
     public function run(): void
     {
-        foreach (self::OPERATORS as $operator) {
+        foreach (self::USERS as $user) {
             User::updateOrCreate(
-                ['phone' => $operator['phone']],
-                ['name' => $operator['name'], 'password' => $operator['password']],
+                ['phone' => $user['phone']],
+                ['name' => $user['name'], 'password' => $user['password'], 'role' => $user['role'], 'is_active' => true],
             );
         }
     }

@@ -1,5 +1,5 @@
-<x-layouts.app title="Login Operator">
-    <h2 class="mb-6 text-center text-lg font-bold text-slate-700">LOGIN OPERATOR</h2>
+<x-layouts.app title="Login">
+    <h2 class="mb-6 text-center text-lg font-bold text-slate-700">LOGIN</h2>
 
     <form method="POST" action="{{ route('login.store') }}" class="flex flex-col gap-5">
         @csrf
@@ -22,9 +22,8 @@
 
         <button type="submit" class="btn-primary">MASUK</button>
 
-        <p class="text-center text-sm text-slate-600">
-            Belum punya akun?
-            <a href="{{ route('register') }}" class="font-semibold text-sky-700 hover:underline">Daftar operator</a>
+        <p class="text-center text-sm text-slate-500">
+            Belum punya akun? Hubungi administrator.
         </p>
     </form>
 </x-layouts.app>

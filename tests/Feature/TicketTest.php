@@ -60,6 +60,23 @@ test('an operator can save a ticket with photos and is sent to the print page', 
     Storage::disk('public')->assertExists([$ticket->vehicle_photo_path, $ticket->ticket_photo_path]);
 });
 
+test('a ticket can be saved without any photos', function () {
+    $this->actingAs($this->operator)
+        ->post(route('tickets.store'), ticketPayload())
+        ->assertSessionHasNoErrors();
+
+    expect(Ticket::sole())
+        ->vehicle_photo_path->toBeNull()
+        ->ticket_photo_path->toBeNull()
+        ->barcode_path->toBeNull();
+});
+
+test('both photo fields are marked optional on the input form', function () {
+    $this->actingAs($this->operator)
+        ->get(route('tickets.create'))
+        ->assertSeeInOrder(['Foto Kendaraan', 'OPSIONAL', 'Foto Tiket', 'OPSIONAL']);
+});
+
 test('automatic weight mode uses the vehicle class estimate', function () {
     $this->actingAs($this->operator)->post(route('tickets.store'), ticketPayload([
         'weight_mode' => WeightMode::Automatic->value,

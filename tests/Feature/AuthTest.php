@@ -10,29 +10,56 @@ test('guests are redirected to the login page', function () {
     $this->get(route('tickets.create'))->assertRedirect(route('login'));
 });
 
-test('an operator can register with a phone number', function () {
-    $this->post(route('register.store'), [
-        'name' => 'Budi Operator',
-        'phone' => '+62 812-3456-7890',
-        'password' => 'rahasia123',
-        'password_confirmation' => 'rahasia123',
-    ])->assertRedirect(route('tickets.create'));
+test('public registration is not available', function () {
+    $this->get('/register')->assertNotFound();
+    $this->post('/register', ['name' => 'Budi', 'phone' => '081234567890', 'password' => 'rahasia123'])->assertNotFound();
 
-    $this->assertAuthenticated();
-    expect(User::sole()->phone)->toBe('081234567890');
+    $this->get(route('login'))->assertOk()->assertDontSee('Daftar operator');
+
+    expect(User::count())->toBe(0);
 });
 
-test('a phone number can only be registered once', function () {
-    User::factory()->create(['phone' => '081234567890']);
+test('an administrator is sent to the admin dashboard after login', function () {
+    User::factory()->admin()->create(['phone' => '081234567890', 'password' => 'rahasia123']);
 
-    $this->post(route('register.store'), [
-        'name' => 'Budi Operator',
-        'phone' => '6281234567890',
+    $this->post(route('login.store'), [
+        'phone' => '081234567890',
         'password' => 'rahasia123',
-        'password_confirmation' => 'rahasia123',
+    ])->assertRedirect(route('admin.dashboard'));
+});
+
+test('a deactivated account cannot log in', function () {
+    User::factory()->inactive()->create(['phone' => '081234567890', 'password' => 'rahasia123']);
+
+    $this->post(route('login.store'), [
+        'phone' => '081234567890',
+        'password' => 'rahasia123',
     ])->assertSessionHasErrors('phone');
 
     $this->assertGuest();
+});
+
+test('a user deactivated while logged in is signed out on the next request', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->get(route('tickets.create'))->assertOk();
+
+    $user->update(['is_active' => false]);
+
+    $this->actingAs($user->fresh())
+        ->get(route('tickets.create'))
+        ->assertRedirect(route('login'))
+        ->assertSessionHasErrors('phone');
+
+    $this->assertGuest();
+});
+
+test('logging in records the last login time', function () {
+    $user = User::factory()->create(['phone' => '081234567890', 'password' => 'rahasia123']);
+
+    $this->post(route('login.store'), ['phone' => '081234567890', 'password' => 'rahasia123']);
+
+    expect($user->fresh()->last_login_at)->not->toBeNull();
 });
 
 test('an operator can log in with a phone number in any format', function () {
@@ -46,16 +73,17 @@ test('an operator can log in with a phone number in any format', function () {
     $this->assertAuthenticated();
 });
 
-test('seeded operators can log in and re-seeding does not duplicate them', function () {
+test('seeded accounts can log in and re-seeding does not duplicate them', function () {
     $this->seed(OperatorSeeder::class);
     $this->seed(OperatorSeeder::class);
 
-    expect(User::count())->toBe(3);
+    expect(User::count())->toBe(3)
+        ->and(User::where('phone', '081200000001')->sole()->isAdmin())->toBeTrue();
 
     $this->post(route('login.store'), [
         'phone' => '081200000001',
         'password' => 'password',
-    ])->assertRedirect(route('tickets.create'));
+    ])->assertRedirect(route('admin.dashboard'));
 
     $this->assertAuthenticated();
 });

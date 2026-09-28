@@ -13,6 +13,11 @@ use UnexpectedValueException;
 class VesselController extends Controller
 {
     /**
+     * Result of the last real call to PTOS-R, shown on the admin monitoring dashboard.
+     */
+    public const STATUS_CACHE_KEY = 'ptosr.status';
+
+    /**
      * Operating vessels from the PTOS-R schedule board, fetched server-side and cached briefly.
      */
     public function index(Request $request): JsonResponse
@@ -25,10 +30,26 @@ class VesselController extends Controller
             $vessels = Cache::remember(
                 'ptosr.vessels',
                 config('services.ptosr.cache_seconds'),
-                fn (): array => $this->fetchVessels(),
+                function (): array {
+                    $vessels = $this->fetchVessels();
+
+                    Cache::forever(self::STATUS_CACHE_KEY, [
+                        'ok' => true,
+                        'checked_at' => now()->toIso8601String(),
+                        'vessels' => count($vessels),
+                    ]);
+
+                    return $vessels;
+                },
             );
         } catch (ConnectionException|RequestException|UnexpectedValueException $exception) {
             report($exception);
+
+            Cache::forever(self::STATUS_CACHE_KEY, [
+                'ok' => false,
+                'checked_at' => now()->toIso8601String(),
+                'error' => class_basename($exception),
+            ]);
 
             return response()->json([
                 'message' => 'Gagal mengambil data kapal dari PTOS-R. Silakan coba lagi.',

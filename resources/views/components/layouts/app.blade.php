@@ -16,8 +16,11 @@
                 <h1 class="text-xl font-bold tracking-wide sm:text-2xl">CETAK TIMBANGAN MANUAL RORO</h1>
                 <p class="mt-1 text-sm text-slate-300">Pelabuhan Tanjung Perak Surabaya</p>
                 @auth
-                    <div class="mt-4 flex items-center justify-center gap-3 text-xs text-slate-300">
+                    <div class="mt-4 flex flex-wrap items-center justify-center gap-3 text-xs text-slate-300">
                         <span>👤 {{ auth()->user()->name }} · {{ auth()->user()->phone }}</span>
+                        @if (auth()->user()->isAdmin())
+                            <a href="{{ route('admin.dashboard') }}" class="rounded bg-sky-600 px-2 py-1 font-semibold text-white hover:bg-sky-700">⚙ Admin</a>
+                        @endif
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button type="submit" class="rounded bg-slate-700 px-2 py-1 font-semibold text-white hover:bg-slate-600">Keluar</button>

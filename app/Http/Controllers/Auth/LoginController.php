@@ -19,15 +19,20 @@ class LoginController extends Controller
 
     public function store(LoginRequest $request): RedirectResponse
     {
-        if (! Auth::attempt($request->validated(), $request->boolean('remember'))) {
+        $credentials = [...$request->validated(), 'is_active' => true];
+
+        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
             throw ValidationException::withMessages([
-                'phone' => 'Nomor HP atau password salah.',
+                'phone' => 'Nomor HP atau password salah, atau akun tidak aktif.',
             ]);
         }
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('tickets.create'));
+        $user = $request->user();
+        $user->forceFill(['last_login_at' => now()])->save();
+
+        return redirect()->intended($user->homeUrl());
     }
 
     public function destroy(Request $request): RedirectResponse
