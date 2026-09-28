@@ -141,18 +141,46 @@ function capture() {
     }, 'image/jpeg', CAPTURE_QUALITY);
 }
 
+let noticeTimer = null;
+
 /**
- * Without camera access in the page (plain HTTP or an old browser), fall back to the native picker.
- * On phones the capture attribute still opens the camera app directly.
+ * Small non-blocking notice. alert() is avoided on purpose: it breaks the user gesture that mobile
+ * browsers require before opening the camera app.
  */
-function openNativeCamera(input) {
-    if (!window.isSecureContext) {
-        window.alert('Kamera langsung hanya bisa dipakai lewat HTTPS. Buka aplikasi dengan alamat https:// atau pilih file foto.');
+function showNotice(text) {
+    let notice = document.querySelector('[data-camera-notice]');
+
+    if (!notice) {
+        notice = document.createElement('div');
+        notice.dataset.cameraNotice = '';
+        notice.setAttribute('role', 'status');
+        notice.className = 'fixed inset-x-4 bottom-4 z-50 mx-auto max-w-md rounded-xl bg-slate-900 px-4 py-3 text-sm text-white shadow-2xl';
+        document.body.append(notice);
     }
 
-    input.setAttribute('capture', 'environment');
-    input.click();
-    setTimeout(() => input.removeAttribute('capture'), 1000);
+    notice.textContent = text;
+    notice.hidden = false;
+    clearTimeout(noticeTimer);
+    noticeTimer = setTimeout(() => {
+        notice.hidden = true;
+    }, 8000);
+}
+
+/**
+ * Without camera access in the page (plain http:// or an old browser), use the input that carries a
+ * static capture="environment": phones open the camera app, desktops can only show a file dialog.
+ * Must run synchronously inside the tap handler, otherwise mobile browsers refuse to open the camera.
+ */
+function openNativeCamera(input) {
+    const fallback = document.querySelector(`[data-camera-fallback="${input.id}"]`) ?? input;
+
+    fallback.click();
+
+    const isDesktop = !window.matchMedia('(pointer: coarse)').matches;
+
+    if (!window.isSecureContext && isDesktop) {
+        showNotice('Webcam hanya bisa dibuka lewat alamat https:// (atau localhost). Untuk sementara, pilih file foto.');
+    }
 }
 
 export function openCamera(input, title) {
@@ -184,5 +212,22 @@ export function initCameraButtons() {
         if (input) {
             openCamera(input, button.dataset.cameraTitle);
         }
+    });
+
+    // A photo from the phone's camera app arrives on the fallback input: hand it to the real (named) input.
+    document.addEventListener('change', (event) => {
+        const fallback = event.target.closest?.('[data-camera-fallback]');
+        const input = fallback && document.getElementById(fallback.dataset.cameraFallback);
+        const [file] = fallback?.files ?? [];
+
+        if (!input || !file) {
+            return;
+        }
+
+        const transfer = new DataTransfer();
+        transfer.items.add(file);
+        input.files = transfer.files;
+        fallback.value = '';
+        input.dispatchEvent(new Event('change', { bubbles: true }));
     });
 }

@@ -30,4 +30,8 @@
     </div>
 
     <input id="{{ $inputId }}" name="{{ $name }}" type="file" accept="image/*" class="sr-only" data-photo-input="{{ $inputId }}">
+
+    {{-- Fallback when the in-page camera is unavailable (plain http://): phones open the camera app for this input.
+         The capture attribute must be in the markup; some mobile browsers ignore it when added by script. No name: never submitted. --}}
+    <input type="file" accept="image/*" capture="environment" class="sr-only" tabindex="-1" aria-hidden="true" data-camera-fallback="{{ $inputId }}">
 </div>

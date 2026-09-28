@@ -346,7 +346,8 @@ Hasil yang benar adalah `HTTP/1.1 200 OK`. Jika gagal atau timeout, minta penyed
 | **Jam tiket selisih 7 jam** | `APP_TIMEZONE=Asia/Jakarta` belum diisi atau cache konfigurasi lama. Isi, lalu jalankan `php artisan optimize`. |
 | *419 Page Expired* saat login / simpan | Sesi habis atau cookie ditolak. Jika situs belum HTTPS, set `SESSION_SECURE_COOKIE=false`. Pastikan tabel `sessions` ada (`php artisan migrate --force`). |
 | Upload foto gagal / *"The foto ... failed to upload"* | Naikkan `upload_max_filesize` & `post_max_size` (bagian 7). |
-| **Tombol Kamera membuka pemilih file**, bukan kamera | Situs dibuka lewat `http://`. Aktifkan SSL dan buka lewat `https://`. |
+| **Tombol Kamera membuka pemilih file**, bukan kamera | Situs dibuka lewat `http://`. Aktifkan SSL dan buka lewat `https://`. Di HP, lewat `http://` tombol Kamera membuka aplikasi kamera HP (bukan kamera di dalam halaman). |
+| Di HP, tombol Kamera membuka **galeri** | Link dibuka dari dalam aplikasi lain (WhatsApp, Instagram, Facebook, dll.) yang memakai browser bawaannya sendiri. Buka alamatnya langsung di **Chrome** / **Safari**. |
 | *"Izin kamera ditolak"* | Klik ikon 🔒 / 📷 di address bar, lalu izinkan **Kamera** untuk situs ini, kemudian muat ulang halaman. |
 | *"Kamera sedang dipakai aplikasi lain"* | Tutup aplikasi lain yang memakai webcam (Zoom, Teams, aplikasi kamera). |
 | Barcode tidak terbaca otomatis | Pastikan `public_html/.htaccess` berasal dari versi terbaru (berisi `AddType application/wasm .wasm`), dan folder `build/` lengkap (ada file `zxing_reader-*.wasm`). Nilai barcode tetap bisa diketik manual. |

@@ -83,7 +83,9 @@ test('both photo fields open the camera and still allow picking a file', functio
         ->assertSee('data-camera-open="vehicle_photo"', false)
         ->assertSee('data-camera-open="ticket_photo"', false)
         ->assertSee('for="vehicle_photo"', false)
-        ->assertSee('📁 Pilih File');
+        ->assertSee('📁 Pilih File')
+        ->assertSee('capture="environment" class="sr-only" tabindex="-1" aria-hidden="true" data-camera-fallback="vehicle_photo"', false)
+        ->assertSee('data-camera-fallback="ticket_photo"', false);
 });
 
 test('automatic weight mode uses the vehicle class estimate', function () {
