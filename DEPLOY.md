@@ -205,7 +205,7 @@ Penjelasan pengaturan yang paling penting:
 |---|---|
 | `APP_DEBUG=false` | Jika `true`, pesan error menampilkan detail server, termasuk konfigurasi. **Jangan pernah `true` di produksi.** |
 | `APP_URL` | Dipakai untuk link foto dan link di file export CSV. Jika salah, foto tidak tampil. Pakai `https://` dan tanpa garis miring di akhir. |
-| `APP_TIMEZONE=Asia/Jakarta` | Jika tidak diisi, semua jam tersimpan dalam UTC (7 jam lebih lambat dari WIB), dan filter "Hari ini" bergeser. **Isi sebelum ada data**, karena mengubahnya belakangan akan menggeser jam data lama. |
+| `APP_TIMEZONE=Asia/Jakarta` | Aplikasi memakai WIB. Nilai bawaannya sudah `Asia/Jakarta`, tapi tetap tulis di `.env` supaya jelas. **Jangan diubah setelah ada data**, karena jam data lama akan bergeser. |
 | `SESSION_LIFETIME` | Lama login bertahan (menit). `720` = 12 jam, cukup untuk satu shift. |
 | `PTOSR_BRANCH_CODE` / `PTOSR_TERMINAL_CODE` | Kode cabang/terminal yang dipakai untuk mengambil daftar kapal. `61` / `601` = Tanjung Perak. |
 | `PTOSR_CACHE_SECONDS` | Daftar kapal disimpan sementara selama sekian detik, supaya server PTOS-R tidak dipanggil terus-menerus. |
