@@ -289,6 +289,20 @@ test('the printed ticket shows the weight as tonnage in tonnes', function () {
         ->assertDontSee('Kg');
 });
 
+test('the printed slip is called a kitir, not a tiket', function () {
+    $ticket = Ticket::factory()->for($this->operator)->create();
+
+    $response = $this->actingAs($this->operator)->get(route('tickets.print', $ticket));
+
+    $response->assertOk()
+        ->assertSee('<title>Kitir '.$ticket->ticket_number.'</title>', false)
+        ->assertSee('KITIR TIMBANGAN KENDARAAN')
+        ->assertSee('No Kitir')
+        ->assertSee('Simpan kitir ini sebagai bukti timbang');
+
+    expect(strip_tags($response->getContent()))->not->toMatch('/\btiket\b/i');
+});
+
 test('the scanned barcode value and format are stored and printed', function () {
     $this->actingAs($this->operator)->post(route('tickets.store'), ticketPayload([
         'barcode_value' => '  TMB-TIKET-0001234 ',
